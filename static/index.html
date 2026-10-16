@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Parikshan AI</title>
+  <script>
+    // apply saved theme before paint (no flash)
+    try { const t = localStorage.getItem("parikshan-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233346C7'/><path d='M11 7h10M13 7v7l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V7' fill='none' stroke='white' stroke-width='2.2' stroke-linejoin='round'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/purify.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Parikshan AI home">
+    <span class="brand-mark"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M11 7h10M13 7v7l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V7" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linejoin="round"/></svg></span>
+    <span><strong>Parikshan AI</strong><span class="brand-sub">Clinical trial and drug safety agent</span></span>
+  </a>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" class="tab active" data-view="agent" aria-selected="true">Research agent</button>
+    <button role="tab" class="tab" data-view="compare" aria-selected="false">LLM vs agent</button>
+    <button role="tab" class="tab" data-view="learn" aria-selected="false">How it works</button>
+  </nav>
+  <div class="top-right">
+    <div class="model-pill" id="modelPill" title="Model and pricing"><span class="status-dot" id="statusDot"></span><span id="modelText">connecting…</span></div>
+    <button class="icon-btn" id="themeBtn" aria-label="Switch to dark mode" title="Switch theme"></button>
+  </div>
+</header>
+
+<div id="keyBanner" class="banner" hidden></div>
+
+<!-- ============================ RESEARCH AGENT ============================ -->
+<main class="view" id="view-agent">
+  <aside class="rail">
+    <button class="btn primary wide" id="newChat"><span class="ico" data-icon="plus"></span>New research thread</button>
+    <h3 class="rail-title">Threads</h3>
+    <ul id="threadList" class="thread-list"></ul>
+    <div class="rail-foot" id="lifetimeStats"></div>
+  </aside>
+
+  <section class="conversation">
+    <div id="feed" class="feed">
+      <div class="empty" id="emptyState">
+        <h1>Ask about a drug. Watch the agent research it.</h1>
+        <p class="lede">Parikshan plans its own research, pulls live data from three public sources, and writes a report where every claim is cited and checked.</p>
+        <ul class="source-badges" aria-label="Data sources">
+          <li><span class="ico" data-icon="trials"></span><span><b>ClinicalTrials.gov</b>Registered trials, outcomes, adverse events</span></li>
+          <li><span class="ico" data-icon="papers"></span><span><b>PubMed</b>Published studies and abstracts</span></li>
+          <li><span class="ico" data-icon="safety"></span><span><b>openFDA</b>FAERS reports and drug labels</span></li>
+        </ul>
+        <h2 class="samples-title">Try one</h2>
+        <div class="samples" id="samples"></div>
+      </div>
+    </div>
+    <form id="askForm" class="composer">
+      <textarea id="question" rows="2" placeholder="Ask about a drug, e.g. compare efficacy and GI safety of semaglutide vs tirzepatide for obesity" required></textarea>
+      <button class="btn primary" id="sendBtn" type="submit"><span class="ico" data-icon="play"></span>Run agent</button>
+    </form>
+  </section>
+
+  <aside class="inspector">
+    <section class="panel">
+      <header class="panel-head"><h3>This run</h3><span class="muted small" id="runState">idle</span></header>
+      <div class="cost-row">
+        <div class="cost-big" id="mCost">$0.0000</div>
+        <div class="muted small" id="mInr">≈ ₹0.00</div>
+      </div>
+      <p class="muted tiny" id="mTier"></p>
+      <div class="split" aria-hidden="true"><span id="splitIn"></span><span id="splitOut"></span></div>
+      <p class="legend"><span class="dot in"></span>Input <b id="mInCost">$0</b><span class="dot out"></span>Output <b id="mOutCost">$0</b></p>
+      <dl class="stats">
+        <div><dt>LLM calls</dt><dd id="mCalls">0</dd></div>
+        <div><dt>Tool calls</dt><dd id="mTools">0</dd></div>
+        <div><dt>Input tokens</dt><dd id="mIn">0</dd></div>
+        <div><dt>Output tokens</dt><dd id="mOut">0</dd></div>
+      </dl>
+      <div class="calls" id="callsBox" hidden>
+        <h4>Tokens per LLM call</h4>
+        <ol id="callBars" class="call-bars"></ol>
+      </div>
+    </section>
+
+    <section class="panel" id="reportPanel">
+      <header class="panel-head"><h3>Report</h3></header>
+      <div id="reportCard" class="report-empty">When the agent writes a report, it shows up here with verified citations and a PDF download.</div>
+    </section>
+  </aside>
+</main>
+
+<!-- ============================ LLM vs AGENT ============================ -->
+<main class="view page" id="view-compare" hidden>
+  <section class="page-wrap">
+    <h1 class="page-title">Same question, two approaches</h1>
+    <p class="lede">A plain LLM call answers from what the model remembers, in one shot. The agent decides which tools to call, reads live data, and only then answers. Compare the answers, sources, time and cost.</p>
+    <form id="compareForm" class="composer inline">
+      <textarea id="compareQ" rows="2" required>Which phase 3 trials of pembrolizumab in non-small cell lung cancer are currently recruiting?</textarea>
+      <button class="btn primary" type="submit" id="compareBtn"><span class="ico" data-icon="play"></span>Run both</button>
+    </form>
+    <div class="compare-grid">
+      <article class="panel compare-col">
+        <header><h2>Plain LLM call</h2><p class="muted small">1 request, no tools, no memory</p></header>
+        <div class="cmp-stats" id="llmStats"></div>
+        <div class="md" id="llmAnswer"><p class="muted">Waiting to run.</p></div>
+      </article>
+      <article class="panel compare-col agent">
+        <header><h2>Agent</h2><p class="muted small">Think, act, observe loop with 6 tools and live data</p></header>
+        <div class="cmp-stats" id="agentStats"></div>
+        <ol class="mini-trace" id="agentMiniTrace"></ol>
+        <div class="md" id="agentAnswer"><p class="muted">Waiting to run.</p></div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<!-- ============================ HOW IT WORKS ============================ -->
+<main class="view page" id="view-learn" hidden>
+  <section class="page-wrap">
+    <h1 class="page-title">How Parikshan works</h1>
+    <p class="lede">An <b>LLM</b> turns text into text. An <b>agent</b> is an LLM running inside a loop, with tools it can call and memory it can read. Parikshan is the second kind.</p>
+
+    <figure class="panel diagram">
+      <svg viewBox="0 0 860 330" role="img" aria-labelledby="dgTitle">
+        <title id="dgTitle">The agent loop: the agent node calls Gemini, which either requests tools or answers</title>
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+        <g class="dg-box"><rect x="20" y="130" width="140" height="64" rx="10"/><text x="90" y="158">Your question</text><text x="90" y="178" class="dg-small">UI or POST /api/chat</text></g>
+        <g class="dg-box accent"><rect x="230" y="110" width="190" height="104" rx="12"/><text x="325" y="145">agent node</text><text x="325" y="167" class="dg-small">1 LLM call to Gemini</text><text x="325" y="186" class="dg-small">THINK: tool or answer?</text></g>
+        <g class="dg-box"><rect x="520" y="30" width="200" height="104" rx="12"/><text x="620" y="62">tools node</text><text x="620" y="84" class="dg-small">ACT: run Python functions</text><text x="620" y="103" class="dg-small">PubMed, Trials, openFDA</text><text x="620" y="121" class="dg-small">extract, report</text></g>
+        <g class="dg-box"><rect x="520" y="226" width="200" height="74" rx="12"/><text x="620" y="258">Final answer</text><text x="620" y="279" class="dg-small">+ cited report + PDF</text></g>
+        <g class="dg-box store"><rect x="236" y="262" width="180" height="54" rx="10"/><text x="326" y="286">SQLite memory</text><text x="326" y="304" class="dg-small">state saved every step</text></g>
+        <g class="dg-box store"><rect x="760" y="44" width="90" height="76" rx="10"/><text x="805" y="76">ChromaDB</text><text x="805" y="96" class="dg-small">evidence</text></g>
+        <g class="dg-line">
+          <path d="M160 162H226" marker-end="url(#arr)"/>
+          <path d="M420 140C470 120 480 92 516 86" marker-end="url(#arr)"/>
+          <path d="M520 112C480 140 460 168 424 176" marker-end="url(#arr)"/>
+          <path d="M420 196C470 220 480 252 516 260" marker-end="url(#arr)"/>
+          <path d="M325 214V258" marker-end="url(#arr)" class="dash"/>
+          <path d="M720 82H756" marker-end="url(#arr)" class="dash"/>
+        </g>
+        <text x="452" y="100" class="dg-label end">tool calls</text>
+        <text x="480" y="182" class="dg-label start">observe results</text>
+        <text x="428" y="252" class="dg-label">no tool calls</text>
+      </svg>
+      <figcaption>The loop repeats until Gemini stops asking for tools, or hits the step limit. One question usually means 3 to 8 LLM calls.</figcaption>
+    </figure>
+
+    <div class="learn-grid">
+      <div class="panel"><h2>LLM call</h2><p>One HTTP request to the model API. You send the model name, messages and settings. You get back text plus a token count. No tools, no memory unless you resend the chat.</p></div>
+      <div class="panel"><h2>Tokens and cost</h2><p>Billing is per token (about ¾ of a word). <b>Input</b> is everything you send, including history and tool results. <b>Output</b> is what the model writes, including thinking, and costs about 5× more. Agents use many input tokens because every step resends the history.</p></div>
+      <div class="panel"><h2>Tools</h2><p>Python functions with a name, description and argument schema. Gemini reads the descriptions and replies "call search_pubmed with these arguments". Our code runs it and sends the result back.</p></div>
+      <div class="panel"><h2>LangGraph</h2><p>The agent framework. The loop is a small graph: an <i>agent</i> node, a <i>tools</i> node and an edge that checks whether Gemini asked for tools. It handles streaming, step limits and memory.</p></div>
+      <div class="panel"><h2>Memory</h2><p><b>Conversation:</b> saved to SQLite after every step, per thread, so follow-ups work. <b>Evidence:</b> fetched papers and trials go into ChromaDB. <b>Logs:</b> runs, tokens and costs go to a second SQLite file.</p></div>
+      <div class="panel"><h2>RAG</h2><p>Before writing a report, the agent searches ChromaDB for the most relevant evidence and gives only that to Gemini, which must cite it. Citations to anything never fetched are flagged.</p></div>
+      <div class="panel"><h2>FastAPI</h2><p>The Python web server. It turns functions into URLs like <code>POST /api/chat/stream</code>, validates input, streams each agent step live, and serves this page. Docs at <a href="/docs">/docs</a>.</p></div>
+      <div class="panel"><h2>Backup model</h2><p>If the main Gemini model is overloaded (503) or rate-limited (429), every call switches automatically to a lighter backup model so the run still finishes.</p></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============================ REPORT READER ============================ -->
+<dialog id="reader" class="reader" aria-labelledby="readerTitle">
+  <header class="reader-head">
+    <div>
+      <p class="muted small" id="readerMeta"></p>
+      <h2 id="readerTitle">Report</h2>
+    </div>
+    <div class="reader-actions">
+      <a class="btn" id="readerPdf" download><span class="ico" data-icon="download"></span>Download PDF</a>
+      <button class="icon-btn" id="readerClose" aria-label="Close report"><span class="ico" data-icon="close"></span></button>
+    </div>
+  </header>
+  <div class="reader-body" id="readerBody"></div>
+</dialog>
+
+<template id="runTpl">
+  <article class="run">
+    <div class="q"></div>
+    <ol class="stages" aria-label="Research stages"></ol>
+    <section class="panel trace-wrap">
+      <button class="trace-toggle" aria-expanded="true"><span class="ico chev" data-icon="chevron"></span><span class="trace-title">Agent working</span><span class="trace-meta"></span></button>
+      <ol class="trace"></ol>
+    </section>
+    <section class="panel answer" hidden>
+      <header class="answer-head"><h3>Answer</h3><div class="source-count"></div></header>
+      <div class="answer-body md"></div>
+      <div class="refs"></div>
+    </section>
+  </article>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>

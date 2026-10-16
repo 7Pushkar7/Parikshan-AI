@@ -1,0 +1,21 @@
+{
+  "_readme": "Benchmark for Parikshan AI. expected_tools = tools a correct run must use. expected_facts = well-established facts (from FDA labels / pivotal trials) that a correct answer should mention; each entry is a regex, '|' means any of. Verify and extend these by hand against the primary sources before quoting results.",
+  "queries": [
+    {"id": "q01", "question": "Review the efficacy and safety of semaglutide for chronic weight management and write a report", "expected_tools": ["search_clinical_trials", "get_drug_safety_data", "write_report"], "expected_facts": ["nausea", "thyroid", "NCT\\d{8}"], "needs_report": true},
+    {"id": "q02", "question": "Compare tirzepatide vs semaglutide: phase 3 weight-loss outcomes and gastrointestinal adverse events", "expected_tools": ["search_clinical_trials", "search_pubmed"], "expected_facts": ["tirzepatide", "semaglutide", "nausea|gastrointestinal"], "needs_report": false},
+    {"id": "q03", "question": "Which phase 3 trials of pembrolizumab in non-small cell lung cancer are currently recruiting?", "expected_tools": ["search_clinical_trials"], "expected_facts": ["NCT\\d{8}", "recruit"], "needs_report": false},
+    {"id": "q04", "question": "What are the most reported adverse events for isotretinoin, and what does its boxed warning say?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["pregnan|birth defect|teratogen"], "needs_report": false},
+    {"id": "q05", "question": "Summarise the bleeding risk evidence for warfarin from FDA safety data and published studies", "expected_tools": ["get_drug_safety_data", "search_pubmed"], "expected_facts": ["bleed|hemorrhag|haemorrhag"], "needs_report": false},
+    {"id": "q06", "question": "What serious blood-related safety signal is associated with clozapine?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["neutropenia|agranulocytosis"], "needs_report": false},
+    {"id": "q07", "question": "What are the key safety concerns for amiodarone according to its FDA label and FAERS reports?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["pulmonary|lung", "thyroid|liver|hepat"], "needs_report": false},
+    {"id": "q08", "question": "Write a pharmacovigilance summary for metformin covering trials and post-marketing reports", "expected_tools": ["get_drug_safety_data", "write_report"], "expected_facts": ["lactic acidosis"], "needs_report": true},
+    {"id": "q09", "question": "What muscle-related adverse events are reported for atorvastatin and how common are they in trials?", "expected_tools": ["get_drug_safety_data", "search_pubmed"], "expected_facts": ["myalgia|myopathy|muscle|rhabdomyolysis"], "needs_report": false},
+    {"id": "q10", "question": "What infection risks are associated with adalimumab?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["infection", "tuberculosis|TB"], "needs_report": false},
+    {"id": "q11", "question": "What are the notable adverse effects of lisinopril reported to the FDA?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["cough|angioedema"], "needs_report": false},
+    {"id": "q12", "question": "Find completed trials of empagliflozin in heart failure and summarise their primary outcomes", "expected_tools": ["search_clinical_trials"], "expected_facts": ["heart failure", "NCT\\d{8}"], "needs_report": false},
+    {"id": "q13", "question": "What are the eligibility criteria of a phase 3 dupilumab trial in atopic dermatitis?", "expected_tools": ["search_clinical_trials", "get_trial_details"], "expected_facts": ["atopic dermatitis", "age|years"], "needs_report": false},
+    {"id": "q14", "question": "What tendon-related safety warning applies to ciprofloxacin?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["tendon"], "needs_report": false},
+    {"id": "q15", "question": "What does the boxed warning for sertraline say and which adverse events are most reported?", "expected_tools": ["get_drug_safety_data"], "expected_facts": ["suicid"], "needs_report": false},
+    {"id": "q16", "question": "Review neuropsychiatric safety signals for montelukast and write a report", "expected_tools": ["get_drug_safety_data", "write_report"], "expected_facts": ["neuropsychiatric|depression|suicid|mood"], "needs_report": true}
+  ]
+}
